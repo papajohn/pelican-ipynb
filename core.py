@@ -72,8 +72,24 @@ def get_html_from_filepath(filepath):
     """
     config = Config({'CSSHTMLHeaderTransformer': {'enabled': True,
                      'highlight_class': '.highlight-ipynb'}})
-    exporter = HTMLExporter(config=config, template_file='basic',
+
+    # Remove prompts from rendered notebook (requires nbconvert>=5.1.0)
+    from jinja2 import DictLoader
+    loader = DictLoader({'noprompt':
+                         """
+         {%- extends 'basic.tpl' -%}
+
+         {% block in_prompt -%}
+         {%- endblock in_prompt %}
+
+         {% block output_area_prompt %}
+         {%- endblock output_area_prompt %}
+                         """})
+    exporter = HTMLExporter(config=config,
+                            template_file='noprompt',
+                            extra_loaders=[loader],
                             filters={'highlight2html': custom_highlighter})
+                            
     content, info = exporter.from_filename(filepath)
 
     if BeautifulSoup:
